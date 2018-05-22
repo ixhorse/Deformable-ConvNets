@@ -1,6 +1,6 @@
 ---
 MXNET_VERSION: "mxnet"
-output_path: "./output/fpn/coco"
+output_path: "./output/fpn/visdrone"
 symbol: resnet_v1_101_fpn_dcn_rcnn
 gpus: '0,1,2,3'
 CLASS_AGNOSTIC: false
@@ -8,7 +8,7 @@ SCALES:
 - 800
 - 1280
 # TEST_SCALES: [[800, 1280]] # single scale testing
-TEST_SCALES: [[480, 800], [576, 900], [688, 1100], [800, 1200], [1200, 1600], [1400, 2000]] # multi-scale testing
+TEST_SCALES: [[800, 1200], [1200, 1600], [1400, 2000]] # multi-scale testing
 default:
   frequent: 100
   kvstore: device
@@ -53,13 +53,13 @@ network:
   - 8
   NUM_ANCHORS: 3
 dataset:
-  NUM_CLASSES: 81
-  dataset: coco
-  dataset_path: "./data/coco"
-  image_set: train2014+valminusminival2014
+  NUM_CLASSES: 11
+  dataset: VisDrone
+  dataset_path: "./data/VisDrone2018"
+  image_set: train
   # image_set: minival2014
   root_path: "./data"
-  test_image_set: minival2014
+  test_image_set: val
   proposal: rpn
 TRAIN:
   lr: 0.01
@@ -67,11 +67,11 @@ TRAIN:
   warmup_step: 250
   warmup: true
   # lr: 0.000001
-  lr_step: '4,6'
+  lr_step: '4'
   wd: 0.0001
   begin_epoch: 0
   end_epoch: 7
-  model_prefix: 'fpn_coco'
+  model_prefix: 'fpn_visdrone'
   # whether resume training
   RESUME: false
   # whether flip image

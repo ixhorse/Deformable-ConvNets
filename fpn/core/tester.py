@@ -121,9 +121,12 @@ def pred_eval(predictor, test_data, imdb, cfg, vis=False, thresh=1e-3, logger=No
     if os.path.exists(det_file) and not ignore_cache:
         with open(det_file, 'rb') as fid:
             all_boxes = cPickle.load(fid)
-        info_str = imdb.evaluate_detections(all_boxes)
-        if logger:
-            logger.info('evaluate detections: \n{}'.format(info_str))
+        if(imdb.name.split('_')[0] == 'visdrone'):
+            imdb.write_result(all_boxes)
+        else:
+            info_str = imdb.evaluate_detections(all_boxes)
+            if logger:
+                logger.info('evaluate detections: \n{}'.format(info_str))
         return
 
     assert vis or not test_data.shuffle
@@ -194,9 +197,12 @@ def pred_eval(predictor, test_data, imdb, cfg, vis=False, thresh=1e-3, logger=No
     with open(det_file, 'wb') as f:
         cPickle.dump(all_boxes, f, protocol=cPickle.HIGHEST_PROTOCOL)
 
-    info_str = imdb.evaluate_detections(all_boxes)
-    if logger:
-        logger.info('evaluate detections: \n{}'.format(info_str))
+    if(imdb.name.split('_')[0] == 'visdrone'):
+        imdb.write_result(all_boxes)
+    else:
+        info_str = imdb.evaluate_detections(all_boxes)
+        if logger:
+            logger.info('evaluate detections: \n{}'.format(info_str))
 
 
 def vis_all_detection(im_array, detections, class_names, scale, cfg, threshold=1e-3):

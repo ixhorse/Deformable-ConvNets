@@ -15,7 +15,7 @@ import numpy as np
 from module import MutableModule
 from utils import image
 from bbox.bbox_transform import bbox_pred, clip_boxes
-from nms.nms import py_nms_wrapper, cpu_nms_wrapper, gpu_nms_wrapper
+from nms.nms import py_nms_wrapper, cpu_nms_wrapper, gpu_nms_wrapper, py_softnms_wrapper
 from utils.PrefetchingIter import PrefetchingIter
 
 
@@ -166,9 +166,10 @@ def pred_eval(predictor, test_data, imdb, cfg, vis=False, thresh=1e-3, logger=No
     if os.path.exists(det_file) and not ignore_cache:
         with open(det_file, 'rb') as fid:
             all_boxes = cPickle.load(fid)
-        info_str = imdb.evaluate_detections(all_boxes)
-        if logger:
-            logger.info('evaluate detections: \n{}'.format(info_str))
+        imdb.write_result(all_boxes)
+        # info_str = imdb.evaluate_detections(all_boxes)
+        # if logger:
+        #     logger.info('evaluate detections: \n{}'.format(info_str))
         return
 
     assert vis or not test_data.shuffle
@@ -177,7 +178,7 @@ def pred_eval(predictor, test_data, imdb, cfg, vis=False, thresh=1e-3, logger=No
     if not isinstance(test_data, PrefetchingIter):
         test_data = PrefetchingIter(test_data)
 
-    nms = py_nms_wrapper(cfg.TEST.NMS)
+    nms = py_softnms_wrapper(cfg.TEST.NMS, 100)
 
     # limit detections to max_per_image over all classes
     max_per_image = cfg.TEST.max_per_image
@@ -208,7 +209,8 @@ def pred_eval(predictor, test_data, imdb, cfg, vis=False, thresh=1e-3, logger=No
                 cls_boxes = boxes[indexes, 4:8] if cfg.CLASS_AGNOSTIC else boxes[indexes, j * 4:(j + 1) * 4]
                 cls_dets = np.hstack((cls_boxes, cls_scores))
                 keep = nms(cls_dets)
-                all_boxes[j][idx+delta] = cls_dets[keep, :]
+                # all_boxes[j][idx+delta] = cls_dets[keep, :]
+                all_boxes[j][idx+delta] = keep
 
             if max_per_image > 0:
                 image_scores = np.hstack([all_boxes[j][idx+delta][:, -1]
@@ -236,9 +238,12 @@ def pred_eval(predictor, test_data, imdb, cfg, vis=False, thresh=1e-3, logger=No
     with open(det_file, 'wb') as f:
         cPickle.dump(all_boxes, f, protocol=cPickle.HIGHEST_PROTOCOL)
 
-    info_str = imdb.evaluate_detections(all_boxes)
-    if logger:
-        logger.info('evaluate detections: \n{}'.format(info_str))
+    imdb.write_result(all_boxes)
+    print 'Write result files success.'
+
+    # info_str = imdb.evaluate_detections(all_boxes)
+    # if logger:
+    #     logger.info('evaluate detections: \n{}'.format(info_str))
 
 
 def vis_all_detection(im_array, detections, class_names, scale, cfg, threshold=1e-3):

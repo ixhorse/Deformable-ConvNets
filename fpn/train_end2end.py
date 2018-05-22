@@ -12,6 +12,7 @@ import argparse
 import pprint
 import os
 import sys
+import matplotlib.pyplot as plt 
 from config.config import config, update_config
 
 
@@ -105,6 +106,8 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
 
     # check parameter shapes
     sym_instance.check_parameter_shapes(arg_params, aux_params, data_shape_dict)
+    print('....')
+    # mx.viz.plot_network(sym).view()
 
     # create solver
     fixed_param_prefix = config.network.FIXED_PARAMS

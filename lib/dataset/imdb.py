@@ -192,7 +192,7 @@ class IMDB(object):
         self.image_set_index *= 2
         return segdb
 
-    def append_flipped_images(self, roidb):
+    def append_flipped_images(self, roidb, dataset_name):
         """
         append flipped images to an roidb
         flip boxes coordinates, images will be actually flipped when loading into network
@@ -206,8 +206,12 @@ class IMDB(object):
             boxes = roi_rec['boxes'].copy()
             oldx1 = boxes[:, 0].copy()
             oldx2 = boxes[:, 2].copy()
-            boxes[:, 0] = roi_rec['width'] - oldx2 - 1
-            boxes[:, 2] = roi_rec['width'] - oldx1 - 1
+            if dataset_name == 'VisDrone':
+                boxes[:, 0] = roi_rec['width'] - oldx2
+                boxes[:, 2] = roi_rec['width'] - oldx1
+            else:
+                boxes[:, 0] = roi_rec['width'] - oldx2 - 1
+                boxes[:, 2] = roi_rec['width'] - oldx1 - 1
             assert (boxes[:, 2] >= boxes[:, 0]).all()
             entry = {'image': roi_rec['image'],
                      'height': roi_rec['height'],

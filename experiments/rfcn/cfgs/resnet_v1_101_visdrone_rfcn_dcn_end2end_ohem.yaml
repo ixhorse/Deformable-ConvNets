@@ -1,32 +1,25 @@
 ---
 MXNET_VERSION: "mxnet"
-output_path: "./output/fpn/coco"
-symbol: resnet_v1_101_fpn_dcn_rcnn
+output_path: "./output/rfcn_dcn/visdrone"
+symbol: resnet_v1_101_rfcn_dcn
 gpus: '0,1,2,3'
-CLASS_AGNOSTIC: false
+CLASS_AGNOSTIC: true
 SCALES:
-- 800
-- 1280
-# TEST_SCALES: [[800, 1280]] # single scale testing
-TEST_SCALES: [[480, 800], [576, 900], [688, 1100], [800, 1200], [1200, 1600], [1400, 2000]] # multi-scale testing
+- 1200
+- 3000
 default:
   frequent: 100
   kvstore: device
 network:
-  pretrained: "./model/pretrained_model/resnet_v1_101"
+  pretrained: "./model/rfcn_dcn_coco"
   pretrained_epoch: 0
   PIXEL_MEANS:
   - 103.06
   - 115.90
   - 123.15
-  IMAGE_STRIDE: 32
+  IMAGE_STRIDE: 0
   RCNN_FEAT_STRIDE: 16
-  RPN_FEAT_STRIDE:
-  - 4
-  - 8
-  - 16
-  - 32
-  - 64
+  RPN_FEAT_STRIDE: 16
   FIXED_PARAMS:
   - conv1
   - bn_conv1
@@ -50,28 +43,29 @@ network:
   - 1
   - 2
   ANCHOR_SCALES:
+  - 2
+  - 4
   - 8
-  NUM_ANCHORS: 3
+  - 16
+  NUM_ANCHORS: 12
 dataset:
-  NUM_CLASSES: 81
-  dataset: coco
-  dataset_path: "./data/coco"
-  image_set: train2014+valminusminival2014
-  # image_set: minival2014
+  NUM_CLASSES: 11
+  dataset: VisDrone
+  dataset_path: "./data/VisDrone2018"
+  image_set: train
   root_path: "./data"
-  test_image_set: minival2014
+  test_image_set: val
   proposal: rpn
 TRAIN:
-  lr: 0.01
-  warmup_lr: 0.001
-  warmup_step: 250
+  lr: 0.0005
+  lr_step: '8.83, 13.83'
   warmup: true
-  # lr: 0.000001
-  lr_step: '4,6'
-  wd: 0.0001
+  warmup_lr: 0.00005
+  # typically we will use 4000 warmup step for single GPU on VOC
+  warmup_step: 1000
   begin_epoch: 0
-  end_epoch: 7
-  model_prefix: 'fpn_coco'
+  end_epoch: 15
+  model_prefix: 'rfcn_visdrone'
   # whether resume training
   RESUME: false
   # whether flip image
@@ -89,7 +83,7 @@ TRAIN:
   # R-CNN
   # rcnn rois batch size
   BATCH_ROIS: -1
-  BATCH_ROIS_OHEM: 512
+  BATCH_ROIS_OHEM: 128
   # rcnn rois sampling params
   FG_FRACTION: 0.25
   FG_THRESH: 0.5
@@ -102,6 +96,7 @@ TRAIN:
   - 1.0
   - 1.0
   - 1.0
+
   # RPN anchor loader
   # rpn anchors batch size
   RPN_BATCH_SIZE: 256
@@ -121,8 +116,8 @@ TRAIN:
   # RPN proposal
   CXX_PROPOSAL: false
   RPN_NMS_THRESH: 0.7
-  RPN_PRE_NMS_TOP_N: 12000
-  RPN_POST_NMS_TOP_N: 2000
+  RPN_PRE_NMS_TOP_N: 6000
+  RPN_POST_NMS_TOP_N: 300
   RPN_MIN_SIZE: 0
   # approximate bounding box regression
   BBOX_NORMALIZATION_PRECOMPUTED: true
@@ -144,8 +139,8 @@ TEST:
   # RPN proposal
   CXX_PROPOSAL: false
   RPN_NMS_THRESH: 0.7
-  RPN_PRE_NMS_TOP_N: 12000
-  RPN_POST_NMS_TOP_N: 2000
+  RPN_PRE_NMS_TOP_N: 6000
+  RPN_POST_NMS_TOP_N: 300
   RPN_MIN_SIZE: 0
   # RPN generate proposal
   PROPOSAL_NMS_THRESH: 0.7
@@ -153,11 +148,6 @@ TEST:
   PROPOSAL_POST_NMS_TOP_N: 2000
   PROPOSAL_MIN_SIZE: 0
   # RCNN nms
-  NMS: 0.3
-  USE_SOFTNMS: true
-  SOFTNMS_THRESH: 0.6
-  test_epoch: 7
-  max_per_image: 100
-  # soft nms
-  USE_SOFTNMS: true
-  SOFTNMS_THRESH: 0.6
+  NMS: 0.4
+  test_epoch: 15
+
