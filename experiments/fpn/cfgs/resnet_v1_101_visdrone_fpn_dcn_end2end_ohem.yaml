@@ -7,8 +7,8 @@ CLASS_AGNOSTIC: false
 SCALES:
 - 800
 - 1280
-# TEST_SCALES: [[800, 1280]] # single scale testing
-TEST_SCALES: [[800, 1200], [1200, 1600], [1400, 2000]] # multi-scale testing
+# TEST_SCALES: [[1300, 1800]] # single scale testing
+TEST_SCALES: [[800, 1200], [1000, 1400], [1200, 1600]] # multi-scale testing
 default:
   frequent: 100
   kvstore: device
@@ -67,7 +67,7 @@ TRAIN:
   warmup_step: 250
   warmup: true
   # lr: 0.000001
-  lr_step: '4'
+  lr_step: '3, 6'
   wd: 0.0001
   begin_epoch: 0
   end_epoch: 7

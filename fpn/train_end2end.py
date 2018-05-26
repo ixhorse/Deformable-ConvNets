@@ -105,8 +105,7 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
         sym_instance.init_weight(config, arg_params, aux_params)
 
     # check parameter shapes
-    sym_instance.check_parameter_shapes(arg_params, aux_params, data_shape_dict)
-    print('....')
+    # sym_instance.check_parameter_shapes(arg_params, aux_params, data_shape_dict)
     # mx.viz.plot_network(sym).view()
 
     # create solver
@@ -117,7 +116,6 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
     mod = MutableModule(sym, data_names=data_names, label_names=label_names,
                         logger=logger, context=ctx, max_data_shapes=[max_data_shape for _ in range(batch_size)],
                         max_label_shapes=[max_label_shape for _ in range(batch_size)], fixed_param_prefix=fixed_param_prefix)
-
     if config.TRAIN.RESUME:
         mod._preload_opt_states = '%s-%04d.states'%(prefix, begin_epoch)
 
@@ -159,11 +157,14 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
     if not isinstance(train_data, PrefetchingIter):
         train_data = PrefetchingIter(train_data)
 
+    initializer = mx.initializer.Xavier()
+
     # train
     mod.fit(train_data, eval_metric=eval_metrics, epoch_end_callback=epoch_end_callback,
             batch_end_callback=batch_end_callback, kvstore=config.default.kvstore,
-            optimizer='sgd', optimizer_params=optimizer_params,
-            arg_params=arg_params, aux_params=aux_params, begin_epoch=begin_epoch, num_epoch=end_epoch)
+            optimizer='sgd', optimizer_params=optimizer_params, initializer=initializer,
+            arg_params=arg_params, aux_params=aux_params, allow_missing=True,
+            begin_epoch=begin_epoch, num_epoch=end_epoch)
 
 
 def main():
