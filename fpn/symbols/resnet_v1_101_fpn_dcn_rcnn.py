@@ -773,38 +773,63 @@ class resnet_v1_101_fpn_dcn_rcnn(Symbol):
     def get_fpn_feature(self, c2, c3, c4, c5, feature_dim=256):
 
         # lateral connection
-        def get_lateral(id, data):
-            # xbranch2a = mx.symbol.Convolution(data=data, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p{}_branch2a'.format(id))
-            # xbn_conv2a = mx.symbol.BatchNorm(data=xbranch2a, use_global_stats=True, fix_gamma=False, eps=1e-5, name='fpn_p{}_bn_conv2a'.format(id))
-            # xrelu_2a = mx.symbol.Activation(data=xbn_conv2a, act_type='relu', name='fpn_p{}_relu_2a'.format(id))
-            xbranch2b = mx.symbol.Convolution(data=data, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p{}_branch2b'.format(id))
-            xbn_conv2b = mx.symbol.BatchNorm(data=xbranch2b, use_global_stats=True, fix_gamma=False, eps=1e-5, name='fpn_p{}_bn_conv2b'.format(id))
-            xlateral = xbn_conv2b
-            return xlateral
-        def get_deconv(id, data):
-            deconv = mx.symbol.Deconvolution(data=data, kernel=(2, 2), stride=(2, 2),num_filter=feature_dim, name="fpn_p{}_deconv".format(id))
-            conv = mx.symbol.Convolution(data=deconv, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p{}_conv'.format(id))
-            bn = mx.symbol.BatchNorm(data=conv, use_global_stats=True, fix_gamma=False, eps=1e-5, name='fpn_p{}_bn_dconv'.format(id))
-            return bn
+        fpn_p5_1x1_1 = mx.symbol.Convolution(data=c5, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p5_1x1_1')
+        fpn_p5_1x1_1_bn = mx.symbol.BatchNorm(data=fpn_p5_1x1_1, name='fpn_p5_1x1_1_bn')
+        fpn_p5_1x1_1_relu = mx.symbol.Activation(data=fpn_p5_1x1_1_bn, act_type='relu', name='fpn_p5_1x1_1_relu')
+        fpn_p5_3x3 = mx.symbol.Convolution(data=fpn_p5_1x1_1_relu, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p5_3x3')
+        fpn_p5_3x3_bn = mx.symbol.BatchNorm(data=fpn_p5_3x3, name='fpn_p5_3x3_bn')
+        fpn_p5_3x3_relu = mx.symbol.Activation(data=fpn_p5_3x3_bn, act_type='relu', name='fpn_p5_3x3_relu')
+        fpn_p5_1x1_2 = mx.symbol.Convolution(data=fpn_p5_3x3_relu, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim, name='fpn_p5_1x1_2')
+        fpn_p5_1x1_2_bn = mx.symbol.BatchNorm(data=fpn_p5_1x1_2, name='fpn_p5_1x1_2_bn')
         
-        fpn_p5_lateral = get_lateral(id=5, data=c5)
-        fpn_p4_lateral = get_lateral(id=4, data=c4)
-        fpn_p3_lateral = get_lateral(id=3, data=c3)
-        fpn_p2_lateral = get_lateral(id=2, data=c2)
-
+        fpn_p4_1x1_1 = mx.symbol.Convolution(data=c4, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p4_1x1_1')
+        fpn_p4_1x1_1_bn = mx.symbol.BatchNorm(data=fpn_p4_1x1_1, name='fpn_p4_1x1_1_bn')
+        fpn_p4_1x1_1_relu = mx.symbol.Activation(data=fpn_p4_1x1_1_bn, act_type='relu', name='fpn_p4_1x1_1_relu')
+        fpn_p4_3x3 = mx.symbol.Convolution(data=fpn_p4_1x1_1_relu, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p4_3x3')
+        fpn_p4_3x3_bn = mx.symbol.BatchNorm(data=fpn_p4_3x3, name='fpn_p4_3x3_bn')
+        fpn_p4_3x3_relu = mx.symbol.Activation(data=fpn_p4_3x3_bn, act_type='relu', name='fpn_p4_3x3_relu')
+        fpn_p4_1x1_2 = mx.symbol.Convolution(data=fpn_p4_3x3_relu, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim, name='fpn_p4_1x1_2')
+        fpn_p4_1x1_2_bn = mx.symbol.BatchNorm(data=fpn_p4_1x1_2, name='fpn_p4_1x1_2_bn')
+        
+        fpn_p3_1x1_1 = mx.symbol.Convolution(data=c3, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p3_1x1_1')
+        fpn_p3_1x1_1_bn = mx.symbol.BatchNorm(data=fpn_p3_1x1_1, name='fpn_p3_1x1_1_bn')
+        fpn_p3_1x1_1_relu = mx.symbol.Activation(data=fpn_p3_1x1_1_bn, act_type='relu', name='fpn_p3_1x1_1_relu')
+        fpn_p3_3x3 = mx.symbol.Convolution(data=fpn_p3_1x1_1_relu, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p3_3x3')
+        fpn_p3_3x3_bn = mx.symbol.BatchNorm(data=fpn_p3_3x3, name='fpn_p3_3x3_bn')
+        fpn_p3_3x3_relu = mx.symbol.Activation(data=fpn_p3_3x3_bn, act_type='relu', name='fpn_p3_3x3_relu')
+        fpn_p3_1x1_2 = mx.symbol.Convolution(data=fpn_p3_3x3_relu, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim, name='fpn_p3_1x1_2')
+        fpn_p3_1x1_2_bn = mx.symbol.BatchNorm(data=fpn_p3_1x1_2, name='fpn_p3_1x1_2_bn')
+        
+        fpn_p2_1x1_1 = mx.symbol.Convolution(data=c2, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p2_1x1_1')
+        fpn_p2_1x1_1_bn = mx.symbol.BatchNorm(data=fpn_p2_1x1_1, name='fpn_p2_1x1_1_bn')
+        fpn_p2_1x1_1_relu = mx.symbol.Activation(data=fpn_p2_1x1_1_bn, act_type='relu', name='fpn_p2_1x1_1_relu')
+        fpn_p2_3x3 = mx.symbol.Convolution(data=fpn_p2_1x1_1_relu, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p2_3x3')
+        fpn_p2_3x3_bn = mx.symbol.BatchNorm(data=fpn_p2_3x3, name='fpn_p2_3x3_bn')
+        fpn_p2_3x3_relu = mx.symbol.Activation(data=fpn_p2_3x3_bn, act_type='relu', name='fpn_p2_3x3_relu')
+        fpn_p2_1x1_2 = mx.symbol.Convolution(data=fpn_p2_3x3_relu, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim, name='fpn_p2_1x1_2')
+        fpn_p2_1x1_2_bn = mx.symbol.BatchNorm(data=fpn_p2_1x1_2, name='fpn_p2_1x1_2_bn')
+        
         # top-down connection
-        fpn_p5 = mx.symbol.Activation(data=fpn_p5_lateral, act_type='relu', name='fpn_p5')
-        fpn_p5_upsample = get_deconv(id=5, data=fpn_p5)
-        fpn_p4_plus = mx.symbol.broadcast_add(*[fpn_p5_upsample, fpn_p4_lateral], name='fpn_p4_sum')
-        fpn_p4 = mx.symbol.Activation(data=fpn_p4_plus, act_type='relu', name='fpn_p4')
-        fpn_p4_upsample = get_deconv(id=4, data=fpn_p4)
-        fpn_p3_plus = mx.symbol.broadcast_add(*[fpn_p4_upsample, fpn_p3_lateral], name='fpn_p3_sum')
-        fpn_p3 = mx.symbol.Activation(data=fpn_p3_plus, act_type='relu', name='fpn_p3')
-        fpn_p3_upsample = get_deconv(id=3, data=fpn_p3)
-        fpn_p2_plus = mx.symbol.broadcast_add(*[fpn_p3_upsample, fpn_p2_lateral], name='fpn_p2_sum')
-        fpn_p2 = mx.symbol.Activation(data=fpn_p2_plus, act_type='relu', name='fpn_p2')
+        fpn_p5_upsample = mx.symbol.UpSampling(data=fpn_p5_1x1_2_bn, scale=2, sample_type='bilinear', num_filter=feature_dim, name="upsampling_fpn_p5")
+        fpn_p5_upsample_conv = mx.symbol.Convolution(data=fpn_p5_upsample, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p5_upsample_conv')
+        fpn_p5_upsample_bn = mx.symbol.BatchNorm(data=fpn_p5_upsample_conv, name='fpn_p5_upsample_bn')
+        fpn_p4_plus = mx.sym.ElementWiseSum(*[fpn_p5_upsample_bn, fpn_p4_1x1_2_bn], name='fpn_p4_sum')
+
+        fpn_p4_upsample = mx.symbol.UpSampling(data=fpn_p4_plus, scale=2, sample_type='bilinear', num_filter=feature_dim, name="upsampling_fpn_p4")
+        fpn_p4_upsample_conv = mx.symbol.Convolution(data=fpn_p4_upsample, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p4_upsample_conv')
+        fpn_p4_upsample_bn = mx.symbol.BatchNorm(data=fpn_p4_upsample_conv, name='fpn_p4_upsample_bn')
+        fpn_p3_plus = mx.sym.ElementWiseSum(*[fpn_p4_upsample_bn, fpn_p3_1x1_2_bn], name='fpn_p3_sum')
+
+        fpn_p3_upsample = mx.symbol.UpSampling(data=fpn_p3_plus, scale=2, sample_type='bilinear', num_filter=feature_dim, name="upsampling_fpn_p3")
+        fpn_p3_upsample_conv = mx.symbol.Convolution(data=fpn_p3_upsample, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p3_upsample_conv')        
+        fpn_p3_upsample_bn = mx.symbol.BatchNorm(data=fpn_p3_upsample_conv, name='fpn_p3_upsample_bn')
+        fpn_p2_plus = mx.sym.ElementWiseSum(*[fpn_p3_upsample_bn, fpn_p2_1x1_2_bn], name='fpn_p2_sum')
         # FPN feature
         fpn_p6 = mx.sym.Convolution(data=c5, kernel=(3, 3), pad=(1, 1), stride=(2, 2), num_filter=feature_dim, name='fpn_p6')
+        fpn_p5 = mx.symbol.Activation(data=fpn_p5_1x1_2_bn, act_type='relu', name='fpn_p5')
+        fpn_p4 = mx.symbol.Activation(data=fpn_p4_plus, act_type='relu', name='fpn_p4')
+        fpn_p3 = mx.symbol.Activation(data=fpn_p3_plus, act_type='relu', name='fpn_p3')
+        fpn_p2 = mx.symbol.Activation(data=fpn_p2_plus, act_type='relu', name='fpn_p2')
 
         return fpn_p2, fpn_p3, fpn_p4, fpn_p5, fpn_p6
 
@@ -994,37 +1019,15 @@ class resnet_v1_101_fpn_dcn_rcnn(Symbol):
         arg_params['res4b22_branch2b_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['res4b22_branch2b_offset_bias'])
 
     def init_weight_fpn(self, cfg, arg_params, aux_params):
-        arg_params['fpn_p6_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p6_weight'])
-        arg_params['fpn_p6_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p6_bias'])
-
-        arg_params['fpn_p5_branch2a_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p5_branch2a_weight'])
-        arg_params['fpn_p5_branch2a_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p5_branch2a_bias'])
-        arg_params['fpn_p5_branch2b_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p5_branch2b_weight'])
-        arg_params['fpn_p5_branch2b_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p5_branch2b_bias'])
-        arg_params['fpn_p5_deconv_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p5_deconv_weight'])
-        arg_params['fpn_p5_conv_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p5_conv_bias'])
-        arg_params['fpn_p5_conv_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p5_conv_weight'])
-
-        arg_params['fpn_p4_branch2a_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p4_branch2a_weight'])
-        arg_params['fpn_p4_branch2a_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p4_branch2a_bias'])
-        arg_params['fpn_p4_branch2b_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p4_branch2b_weight'])
-        arg_params['fpn_p4_branch2b_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p4_branch2b_bias'])
-        arg_params['fpn_p4_deconv_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p4_deconv_weight'])
-        arg_params['fpn_p4_conv_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p4_conv_weight'])
-        arg_params['fpn_p4_conv_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p4_conv_bias'])
-
-        arg_params['fpn_p3_branch2a_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p3_branch2a_weight'])
-        arg_params['fpn_p3_branch2a_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p3_branch2a_bias'])
-        arg_params['fpn_p3_branch2b_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p3_branch2b_weight'])
-        arg_params['fpn_p3_branch2b_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p3_branch2b_bias'])
-        arg_params['fpn_p3_deconv_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p3_deconv_weight'])
-        arg_params['fpn_p3_conv_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p3_conv_weight'])
-        arg_params['fpn_p3_conv_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p3_conv_bias'])
-
-        arg_params['fpn_p2_branch2a_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p2_branch2a_weight'])
-        arg_params['fpn_p2_branch2a_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p2_branch2a_bias'])
-        arg_params['fpn_p2_branch2b_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict['fpn_p2_branch2b_weight'])
-        arg_params['fpn_p2_branch2b_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['fpn_p2_branch2b_bias'])
+        initializer = mx.initializer.Xavier(rnd_type='gaussian', magnitude=2)
+        for name, shape in self.arg_shape_dict.items():
+            if 'fpn' in name:
+                arg_params[name] = mx.nd.zeros(shape=shape)
+                initializer(name, arg_params[name])
+        for name, shape in self.aux_shape_dict.items():
+            if 'fpn' in name:
+                aux_params[name] = mx.nd.zeros(shape=shape)
+                initializer(name, aux_params[name])
 
     def init_weight(self, cfg, arg_params, aux_params):
         for name in self.shared_param_list:
@@ -1034,5 +1037,5 @@ class resnet_v1_101_fpn_dcn_rcnn(Symbol):
                 arg_params[name + '_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict[name + '_weight'])
             arg_params[name + '_bias'] = mx.nd.zeros(shape=self.arg_shape_dict[name + '_bias'])
         self.init_deformable_convnet(cfg, arg_params, aux_params)
-        # self.init_weight_rcnn(cfg, arg_params, aux_params)
-        # self.init_weight_fpn(cfg, arg_params, aux_params)
+        self.init_weight_rcnn(cfg, arg_params, aux_params)
+        self.init_weight_fpn(cfg, arg_params, aux_params)

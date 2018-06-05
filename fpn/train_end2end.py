@@ -105,7 +105,7 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
         sym_instance.init_weight(config, arg_params, aux_params)
 
     # check parameter shapes
-    # sym_instance.check_parameter_shapes(arg_params, aux_params, data_shape_dict)
+    sym_instance.check_parameter_shapes(arg_params, aux_params, data_shape_dict)
     # mx.viz.plot_network(sym).view()
 
     # create solver
@@ -157,13 +157,11 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
     if not isinstance(train_data, PrefetchingIter):
         train_data = PrefetchingIter(train_data)
 
-    initializer = mx.initializer.Xavier()
-
     # train
     mod.fit(train_data, eval_metric=eval_metrics, epoch_end_callback=epoch_end_callback,
             batch_end_callback=batch_end_callback, kvstore=config.default.kvstore,
-            optimizer='sgd', optimizer_params=optimizer_params, initializer=initializer,
-            arg_params=arg_params, aux_params=aux_params, allow_missing=True,
+            optimizer='sgd', optimizer_params=optimizer_params,
+            arg_params=arg_params, aux_params=aux_params, allow_missing=False,
             begin_epoch=begin_epoch, num_epoch=end_epoch)
 
 
