@@ -773,63 +773,26 @@ class resnet_v1_101_fpn_dcn_rcnn(Symbol):
     def get_fpn_feature(self, c2, c3, c4, c5, feature_dim=256):
 
         # lateral connection
-        fpn_p5_1x1_1 = mx.symbol.Convolution(data=c5, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p5_1x1_1')
-        fpn_p5_1x1_1_bn = mx.symbol.BatchNorm(data=fpn_p5_1x1_1, name='fpn_p5_1x1_1_bn')
-        fpn_p5_1x1_1_relu = mx.symbol.Activation(data=fpn_p5_1x1_1_bn, act_type='relu', name='fpn_p5_1x1_1_relu')
-        fpn_p5_3x3 = mx.symbol.Convolution(data=fpn_p5_1x1_1_relu, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p5_3x3')
-        fpn_p5_3x3_bn = mx.symbol.BatchNorm(data=fpn_p5_3x3, name='fpn_p5_3x3_bn')
-        fpn_p5_3x3_relu = mx.symbol.Activation(data=fpn_p5_3x3_bn, act_type='relu', name='fpn_p5_3x3_relu')
-        fpn_p5_1x1_2 = mx.symbol.Convolution(data=fpn_p5_3x3_relu, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim, name='fpn_p5_1x1_2')
-        fpn_p5_1x1_2_bn = mx.symbol.BatchNorm(data=fpn_p5_1x1_2, name='fpn_p5_1x1_2_bn')
-        
-        fpn_p4_1x1_1 = mx.symbol.Convolution(data=c4, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p4_1x1_1')
-        fpn_p4_1x1_1_bn = mx.symbol.BatchNorm(data=fpn_p4_1x1_1, name='fpn_p4_1x1_1_bn')
-        fpn_p4_1x1_1_relu = mx.symbol.Activation(data=fpn_p4_1x1_1_bn, act_type='relu', name='fpn_p4_1x1_1_relu')
-        fpn_p4_3x3 = mx.symbol.Convolution(data=fpn_p4_1x1_1_relu, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p4_3x3')
-        fpn_p4_3x3_bn = mx.symbol.BatchNorm(data=fpn_p4_3x3, name='fpn_p4_3x3_bn')
-        fpn_p4_3x3_relu = mx.symbol.Activation(data=fpn_p4_3x3_bn, act_type='relu', name='fpn_p4_3x3_relu')
-        fpn_p4_1x1_2 = mx.symbol.Convolution(data=fpn_p4_3x3_relu, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim, name='fpn_p4_1x1_2')
-        fpn_p4_1x1_2_bn = mx.symbol.BatchNorm(data=fpn_p4_1x1_2, name='fpn_p4_1x1_2_bn')
-        
-        fpn_p3_1x1_1 = mx.symbol.Convolution(data=c3, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p3_1x1_1')
-        fpn_p3_1x1_1_bn = mx.symbol.BatchNorm(data=fpn_p3_1x1_1, name='fpn_p3_1x1_1_bn')
-        fpn_p3_1x1_1_relu = mx.symbol.Activation(data=fpn_p3_1x1_1_bn, act_type='relu', name='fpn_p3_1x1_1_relu')
-        fpn_p3_3x3 = mx.symbol.Convolution(data=fpn_p3_1x1_1_relu, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p3_3x3')
-        fpn_p3_3x3_bn = mx.symbol.BatchNorm(data=fpn_p3_3x3, name='fpn_p3_3x3_bn')
-        fpn_p3_3x3_relu = mx.symbol.Activation(data=fpn_p3_3x3_bn, act_type='relu', name='fpn_p3_3x3_relu')
-        fpn_p3_1x1_2 = mx.symbol.Convolution(data=fpn_p3_3x3_relu, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim, name='fpn_p3_1x1_2')
-        fpn_p3_1x1_2_bn = mx.symbol.BatchNorm(data=fpn_p3_1x1_2, name='fpn_p3_1x1_2_bn')
-        
-        fpn_p2_1x1_1 = mx.symbol.Convolution(data=c2, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p2_1x1_1')
-        fpn_p2_1x1_1_bn = mx.symbol.BatchNorm(data=fpn_p2_1x1_1, name='fpn_p2_1x1_1_bn')
-        fpn_p2_1x1_1_relu = mx.symbol.Activation(data=fpn_p2_1x1_1_bn, act_type='relu', name='fpn_p2_1x1_1_relu')
-        fpn_p2_3x3 = mx.symbol.Convolution(data=fpn_p2_1x1_1_relu, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim/4, name='fpn_p2_3x3')
-        fpn_p2_3x3_bn = mx.symbol.BatchNorm(data=fpn_p2_3x3, name='fpn_p2_3x3_bn')
-        fpn_p2_3x3_relu = mx.symbol.Activation(data=fpn_p2_3x3_bn, act_type='relu', name='fpn_p2_3x3_relu')
-        fpn_p2_1x1_2 = mx.symbol.Convolution(data=fpn_p2_3x3_relu, kernel=(1, 1), pad=(0, 0), stride=(1, 1), num_filter=feature_dim, name='fpn_p2_1x1_2')
-        fpn_p2_1x1_2_bn = mx.symbol.BatchNorm(data=fpn_p2_1x1_2, name='fpn_p2_1x1_2_bn')
+        fpn_p5_3x3 = mx.symbol.Convolution(data=c5, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p5_3x3')
+        fpn_p4_3x3 = mx.symbol.Convolution(data=c4, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p4_3x3')
+        fpn_p3_3x3 = mx.symbol.Convolution(data=c3, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p3_3x3')
+        fpn_p2_3x3 = mx.symbol.Convolution(data=c2, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p2_3x3')
         
         # top-down connection
-        fpn_p5_upsample = mx.symbol.UpSampling(data=fpn_p5_1x1_2_bn, scale=2, sample_type='bilinear', num_filter=feature_dim, name="upsampling_fpn_p5")
-        fpn_p5_upsample_conv = mx.symbol.Convolution(data=fpn_p5_upsample, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p5_upsample_conv')
-        fpn_p5_upsample_bn = mx.symbol.BatchNorm(data=fpn_p5_upsample_conv, name='fpn_p5_upsample_bn')
-        fpn_p4_plus = mx.sym.ElementWiseSum(*[fpn_p5_upsample_bn, fpn_p4_1x1_2_bn], name='fpn_p4_sum')
+        fpn_p5_upsample = mx.symbol.UpSampling(data=fpn_p5_3x3, scale=2, sample_type='bilinear', num_filter=feature_dim, name="upsampling_fpn_p5")
+        fpn_p4_plus = mx.sym.ElementWiseSum(*[fpn_p5_upsample, fpn_p4_3x3], name='fpn_p4_sum')
 
         fpn_p4_upsample = mx.symbol.UpSampling(data=fpn_p4_plus, scale=2, sample_type='bilinear', num_filter=feature_dim, name="upsampling_fpn_p4")
-        fpn_p4_upsample_conv = mx.symbol.Convolution(data=fpn_p4_upsample, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p4_upsample_conv')
-        fpn_p4_upsample_bn = mx.symbol.BatchNorm(data=fpn_p4_upsample_conv, name='fpn_p4_upsample_bn')
-        fpn_p3_plus = mx.sym.ElementWiseSum(*[fpn_p4_upsample_bn, fpn_p3_1x1_2_bn], name='fpn_p3_sum')
+        fpn_p3_plus = mx.sym.ElementWiseSum(*[fpn_p4_upsample, fpn_p3_3x3], name='fpn_p3_sum')
 
         fpn_p3_upsample = mx.symbol.UpSampling(data=fpn_p3_plus, scale=2, sample_type='bilinear', num_filter=feature_dim, name="upsampling_fpn_p3")
-        fpn_p3_upsample_conv = mx.symbol.Convolution(data=fpn_p3_upsample, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p3_upsample_conv')        
-        fpn_p3_upsample_bn = mx.symbol.BatchNorm(data=fpn_p3_upsample_conv, name='fpn_p3_upsample_bn')
-        fpn_p2_plus = mx.sym.ElementWiseSum(*[fpn_p3_upsample_bn, fpn_p2_1x1_2_bn], name='fpn_p2_sum')
+        fpn_p2_plus = mx.sym.ElementWiseSum(*[fpn_p3_upsample, fpn_p2_3x3], name='fpn_p2_sum')
         # FPN feature
         fpn_p6 = mx.sym.Convolution(data=c5, kernel=(3, 3), pad=(1, 1), stride=(2, 2), num_filter=feature_dim, name='fpn_p6')
-        fpn_p5 = mx.symbol.Activation(data=fpn_p5_1x1_2_bn, act_type='relu', name='fpn_p5')
-        fpn_p4 = mx.symbol.Activation(data=fpn_p4_plus, act_type='relu', name='fpn_p4')
-        fpn_p3 = mx.symbol.Activation(data=fpn_p3_plus, act_type='relu', name='fpn_p3')
-        fpn_p2 = mx.symbol.Activation(data=fpn_p2_plus, act_type='relu', name='fpn_p2')
+        fpn_p5 = mx.symbol.Convolution(data=fpn_p5_3x3, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p5')
+        fpn_p4 = mx.symbol.Convolution(data=fpn_p4_plus, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p4')
+        fpn_p3 = mx.symbol.Convolution(data=fpn_p3_plus, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p3')
+        fpn_p2 = mx.symbol.Convolution(data=fpn_p2_plus, kernel=(3, 3), pad=(1, 1), stride=(1, 1), num_filter=feature_dim, name='fpn_p2')
 
         return fpn_p2, fpn_p3, fpn_p4, fpn_p5, fpn_p6
 
