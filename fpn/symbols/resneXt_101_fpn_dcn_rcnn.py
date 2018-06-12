@@ -19,30 +19,15 @@ class resneXt_101_fpn_dcn_rcnn(Symbol):
         """
         Use __init__ to define parameter network needs
         """
-        self.shared_param_list = ['rpn_conv', 'rpn_cls_score', 'rpn_bbox_pred']
+        self.shared_param_list = ['offset_p2', 'offset_p3', 'offset_p4', 'offset_p5',
+                                  'rpn_conv', 'rpn_cls_score', 'rpn_bbox_pred']
         self.shared_param_dict = {}
         for name in self.shared_param_list:
             self.shared_param_dict[name + '_weight'] = mx.sym.Variable(name + '_weight')
             self.shared_param_dict[name + '_bias'] = mx.sym.Variable(name + '_bias')
-    def residual_unit(self, data, num_filter, stride, dim_match, name, bottle_neck=True, num_group=32, bn_mom=0.9, workspace=256, memonger=False):
-        """Return ResNet Unit symbol for building ResNet
-        Parameters
-        ----------
-        data : str
-            Input data
-        num_filter : int
-            Number of output channels
-        bnf : int
-            Bottle neck channels factor with regard to num_filter
-        stride : tuple
-            Stride used in convolution
-        dim_match : Boolean
-            True means channel number between input and output is the same, otherwise means differ
-        name : str
-            Base name of the operators
-        workspace : int
-            Workspace used in convolution operator
-        """
+    def residual_unit(self, data, num_filter, stride, dim_match, name, bottle_neck=True, num_group=32, bn_mom=0.9, workspace=256, 
+                        memonger=False, with_dpyramid=False):
+
         if bottle_neck:
             # the same as https://github.com/facebook/fb.resnet.torch#notes, a bit difference with origin paper
 
@@ -50,10 +35,17 @@ class resneXt_101_fpn_dcn_rcnn(Symbol):
                                         no_bias=True, workspace=workspace, name=name + '_conv1')
             bn1 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn1')
             act1 = mx.sym.Activation(data=bn1, act_type='relu', name=name + '_relu1')
+            
+            if with_dpyramid:
+                conv2_offset = mx.sym.Convolution(data=act1, num_filter=72, pad=(1,1), kernel=(3,3), stride=stride, name=name + '_conv2_offset')
+                conv2 = mx.contrib.symbol.DeformableConvolution(data=act1, offset=conv2_offset, num_filter=int(num_filter*0.5), 
+                                                                num_group=num_group, num_deformable_group=4,
+                                                                pad=(1, 1), kernel=(3, 3), stride=stride, no_bias=True, 
+                                                                name=name + '_conv2')
+            else:
+                conv2 = mx.sym.Convolution(data=act1, num_filter=int(num_filter*0.5), num_group=num_group, kernel=(3,3), stride=stride, pad=(1,1),
+                                            no_bias=True, workspace=workspace, name=name + '_conv2')
 
-
-            conv2 = mx.sym.Convolution(data=act1, num_filter=int(num_filter*0.5), num_group=num_group, kernel=(3,3), stride=stride, pad=(1,1),
-                                        no_bias=True, workspace=workspace, name=name + '_conv2')
             bn2 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn2')
             act2 = mx.sym.Activation(data=bn2, act_type='relu', name=name + '_relu2')
 
@@ -98,23 +90,8 @@ class resneXt_101_fpn_dcn_rcnn(Symbol):
             return mx.sym.Activation(data=eltwise, act_type='relu', name=name + '_relu')
 
     def get_resneXt_backbone(self, data, units, num_stages, filter_list, num_group, bottle_neck=True, bn_mom=0.9, 
-                            workspace=256, dtype='float32', memonger=False, with_dconv=False, with_dpyramid=False):
-        """Return ResNeXt symbol of
-        Parameters
-        ----------
-        units : list
-            Number of units in each stage
-        num_stages : int
-            Number of stage
-        filter_list : list
-            Channel size of each stage
-        num_groupes: int
-            Number of conv groups
-        workspace : int
-            Workspace used in convolution operator
-        dtype : str
-            Precision (float32 or float16)
-        """
+                            workspace=256, dtype='float32', memonger=False):
+        
         num_unit = len(units)
         assert(num_unit == num_stages)
         data = mx.sym.BatchNorm(data=data, fix_gamma=True, eps=2e-5, momentum=bn_mom, name='bn_data')
@@ -127,12 +104,25 @@ class resneXt_101_fpn_dcn_rcnn(Symbol):
 
         pylayer = []
         for i in range(num_stages):
+            if(i == 3):
+                with_dpyramid = True
+            else:
+                with_dpyramid = False
             body = self.residual_unit(body, filter_list[i+1], (1 if i==0 else 2, 1 if i==0 else 2), False,
                                 name='stage%d_unit%d' % (i + 1, 1), bottle_neck=bottle_neck, num_group=num_group,
-                                bn_mom=bn_mom, workspace=workspace, memonger=memonger)
+                                bn_mom=bn_mom, workspace=workspace, memonger=memonger, with_dpyramid=with_dpyramid)
             for j in range(units[i]-1):
+                if(i == 0):
+                    with_dpyramid = False
+                elif(i == 3):
+                    with_dpyramid = True
+                elif(j == units[i]-2):
+                    with_dpyramid = True
+                else:
+                    with_dpyramid = False
                 body = self.residual_unit(body, filter_list[i+1], (1,1), True, name='stage%d_unit%d' % (i + 1, j + 2),
-                                    bottle_neck=bottle_neck, num_group=num_group, bn_mom=bn_mom, workspace=workspace, memonger=memonger)
+                                    bottle_neck=bottle_neck, num_group=num_group, bn_mom=bn_mom, workspace=workspace, 
+                                    memonger=memonger, with_dpyramid=with_dpyramid)
             pylayer.append(body)
         
         return pylayer
@@ -214,8 +204,6 @@ class resneXt_101_fpn_dcn_rcnn(Symbol):
                                                             filter_list = filter_list,
                                                             num_group   = num_group,
                                                             bottle_neck = bottle_neck,
-                                                            with_dconv  = False, 
-                                                            with_dpyramid=False,
                                                             memonger    = False)
         fpn_p2, fpn_p3, fpn_p4, fpn_p5, fpn_p6 = self.get_fpn_feature(res2, res3, res4, res5)
 
@@ -282,21 +270,21 @@ class resneXt_101_fpn_dcn_rcnn(Symbol):
             # ROI proposal
             rois = mx.sym.Custom(**dict(arg_dict.items() + aux_dict.items()))
 
-        # offset_p2_weight = mx.sym.Variable(name='offset_p2_weight', dtype=np.float32, lr_mult=0.01)
-        # offset_p3_weight = mx.sym.Variable(name='offset_p3_weight', dtype=np.float32, lr_mult=0.01)
-        # offset_p4_weight = mx.sym.Variable(name='offset_p4_weight', dtype=np.float32, lr_mult=0.01)
-        # offset_p5_weight = mx.sym.Variable(name='offset_p5_weight', dtype=np.float32, lr_mult=0.01)
-        # offset_p2_bias = mx.sym.Variable(name='offset_p2_bias', dtype=np.float32, lr_mult=0.01)
-        # offset_p3_bias = mx.sym.Variable(name='offset_p3_bias', dtype=np.float32, lr_mult=0.01)
-        # offset_p4_bias = mx.sym.Variable(name='offset_p4_bias', dtype=np.float32, lr_mult=0.01)
-        # offset_p5_bias = mx.sym.Variable(name='offset_p5_bias', dtype=np.float32, lr_mult=0.01)
+        offset_p2_weight = mx.sym.Variable(name='offset_p2_weight', dtype=np.float32, lr_mult=0.01)
+        offset_p3_weight = mx.sym.Variable(name='offset_p3_weight', dtype=np.float32, lr_mult=0.01)
+        offset_p4_weight = mx.sym.Variable(name='offset_p4_weight', dtype=np.float32, lr_mult=0.01)
+        offset_p5_weight = mx.sym.Variable(name='offset_p5_weight', dtype=np.float32, lr_mult=0.01)
+        offset_p2_bias = mx.sym.Variable(name='offset_p2_bias', dtype=np.float32, lr_mult=0.01)
+        offset_p3_bias = mx.sym.Variable(name='offset_p3_bias', dtype=np.float32, lr_mult=0.01)
+        offset_p4_bias = mx.sym.Variable(name='offset_p4_bias', dtype=np.float32, lr_mult=0.01)
+        offset_p5_bias = mx.sym.Variable(name='offset_p5_bias', dtype=np.float32, lr_mult=0.01)
 
         roi_pool = mx.symbol.Custom(data_p2=fpn_p2, data_p3=fpn_p3, data_p4=fpn_p4, data_p5=fpn_p5,
-                                    # offset_weight_p2=offset_p2_weight, offset_bias_p2=offset_p2_bias,
-                                    # offset_weight_p3=offset_p3_weight, offset_bias_p3=offset_p3_bias,
-                                    # offset_weight_p4=offset_p4_weight, offset_bias_p4=offset_p4_bias,
-                                    # offset_weight_p5=offset_p5_weight, offset_bias_p5=offset_p5_bias,
-                                    rois=rois, op_type='fpn_roi_pooling', name='fpn_roi_pooling', with_deformable=False)
+                                    offset_weight_p2=offset_p2_weight, offset_bias_p2=offset_p2_bias,
+                                    offset_weight_p3=offset_p3_weight, offset_bias_p3=offset_p3_bias,
+                                    offset_weight_p4=offset_p4_weight, offset_bias_p4=offset_p4_bias,
+                                    offset_weight_p5=offset_p5_weight, offset_bias_p5=offset_p5_bias,
+                                    rois=rois, op_type='fpn_roi_pooling', name='fpn_roi_pooling', with_deformable=True)
 
         # 2 fc
         fc_new_1 = mx.symbol.FullyConnected(name='fc_new_1', data=roi_pool, num_hidden=1024)
@@ -350,16 +338,16 @@ class resneXt_101_fpn_dcn_rcnn(Symbol):
         arg_params['bbox_pred_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['bbox_pred_bias'])
 
     def init_deformable_convnet(self, cfg, arg_params, aux_params):
-        arg_params['res5a_branch2b_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['res5a_branch2b_offset_weight'])
-        arg_params['res5a_branch2b_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['res5a_branch2b_offset_bias'])
-        arg_params['res5b_branch2b_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['res5b_branch2b_offset_weight'])
-        arg_params['res5b_branch2b_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['res5b_branch2b_offset_bias'])
-        arg_params['res5c_branch2b_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['res5c_branch2b_offset_weight'])
-        arg_params['res5c_branch2b_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['res5c_branch2b_offset_bias'])
-        arg_params['res3b3_branch2b_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['res3b3_branch2b_offset_weight'])
-        arg_params['res3b3_branch2b_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['res3b3_branch2b_offset_bias'])
-        arg_params['res4b22_branch2b_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['res4b22_branch2b_offset_weight'])
-        arg_params['res4b22_branch2b_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['res4b22_branch2b_offset_bias'])
+        arg_params['stage2_unit4_conv2_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['stage2_unit4_conv2_offset_weight'])
+        arg_params['stage2_unit4_conv2_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['stage2_unit4_conv2_offset_bias'])
+        arg_params['stage3_unit23_conv2_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['stage3_unit23_conv2_offset_weight'])
+        arg_params['stage3_unit23_conv2_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['stage3_unit23_conv2_offset_bias'])
+        arg_params['stage4_unit1_conv2_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['stage4_unit1_conv2_offset_weight'])
+        arg_params['stage4_unit1_conv2_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['stage4_unit1_conv2_offset_bias'])
+        arg_params['stage4_unit2_conv2_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['stage4_unit2_conv2_offset_weight'])
+        arg_params['stage4_unit2_conv2_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['stage4_unit2_conv2_offset_bias'])
+        arg_params['stage4_unit3_conv2_offset_weight'] = mx.nd.zeros(shape=self.arg_shape_dict['stage4_unit3_conv2_offset_weight'])
+        arg_params['stage4_unit3_conv2_offset_bias'] = mx.nd.zeros(shape=self.arg_shape_dict['stage4_unit3_conv2_offset_bias'])
 
     def init_weight_fpn(self, cfg, arg_params, aux_params):
         initializer = mx.initializer.Xavier(rnd_type='gaussian', magnitude=2)
@@ -379,6 +367,6 @@ class resneXt_101_fpn_dcn_rcnn(Symbol):
             else:
                 arg_params[name + '_weight'] = mx.random.normal(0, 0.01, shape=self.arg_shape_dict[name + '_weight'])
             arg_params[name + '_bias'] = mx.nd.zeros(shape=self.arg_shape_dict[name + '_bias'])
-        # self.init_deformable_convnet(cfg, arg_params, aux_params)
+        self.init_deformable_convnet(cfg, arg_params, aux_params)
         self.init_weight_rcnn(cfg, arg_params, aux_params)
         self.init_weight_fpn(cfg, arg_params, aux_params)
