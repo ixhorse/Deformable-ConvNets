@@ -8,7 +8,7 @@ SCALES:
 - 800
 - 1280
 # TEST_SCALES: [[1300, 1800]] # single scale testing
-TEST_SCALES: [[800, 1200], [1000, 1400], [1300, 1600]] # multi-scale testing
+TEST_SCALES: [[800, 1200], [1000, 1500], [1300, 1800]] # multi-scale testing
 default:
   frequent: 100
   kvstore: device
@@ -26,7 +26,7 @@ network:
   - 8
   - 16
   - 32
-  # - 64
+  - 64
   FIXED_PARAMS:
   - conv1
   - bn_conv1
@@ -153,6 +153,7 @@ TEST:
   PROPOSAL_POST_NMS_TOP_N: 2000
   PROPOSAL_MIN_SIZE: 0
   # RCNN nms
+  NMS: 0.5
   USE_SOFTNMS: true
   SOFTNMS_THRESH: 0.6
   test_epoch: 7

@@ -63,18 +63,18 @@ dataset:
   test_image_set: val
   proposal: rpn
 TRAIN:
-  lr: 0.0025
-  warmup_lr: 0.00025
-  warmup_step: 250
+  lr: 0.0001
+  warmup_lr: 0.00125
+  warmup_step: 5000
   warmup: true
   # lr: 0.000001
-  lr_step: '8'
+  lr_step: '4'
   wd: 0.0001
   begin_epoch: 0
   end_epoch: 7
   model_prefix: 'fpnx_visdrone'
   # whether resume training
-  RESUME: false
+  RESUME: False
   # whether flip image
   FLIP: true
   # whether shuffle image
@@ -156,5 +156,5 @@ TEST:
   # RCNN nms
   USE_SOFTNMS: true
   SOFTNMS_THRESH: 0.6
-  test_epoch: 7
+  test_epoch: 15
   max_per_image: 100
