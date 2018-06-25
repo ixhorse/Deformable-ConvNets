@@ -1,4 +1,8 @@
 Cython
 EasyDict
 opencv-python
+pyyaml
+matploblib
+pillow
+scikit-image
 mxnet-cu80==0.12.0b20171027
