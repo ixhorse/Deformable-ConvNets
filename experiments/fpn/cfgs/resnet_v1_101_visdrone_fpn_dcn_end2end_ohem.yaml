@@ -8,7 +8,7 @@ SCALES:
 - 800
 - 1280
 # TEST_SCALES: [[1300, 1800]] # single scale testing
-TEST_SCALES: [[800, 1200], [1000, 1500], [1300, 1800]] # multi-scale testing
+TEST_SCALES: [[800, 1200], [1000, 1400], [1300, 1600]] # multi-scale testing
 default:
   frequent: 100
   kvstore: device
@@ -59,12 +59,12 @@ dataset:
   image_set: train
   # image_set: minival2014
   root_path: "./data"
-  test_image_set: val
+  test_image_set: test-challenge
   proposal: rpn
 TRAIN:
   lr: 0.001
   warmup_lr: 0.00025
-  warmup_step: 250
+  warmup_step: 2000
   warmup: true
   # lr: 0.000001
   lr_step: '5'
@@ -157,4 +157,4 @@ TEST:
   USE_SOFTNMS: true
   SOFTNMS_THRESH: 0.6
   test_epoch: 7
-  max_per_image: 100
+  max_per_image: 500

@@ -834,22 +834,6 @@ class resnet_v1_101_fpn_dcn_rcnn(Symbol):
         # shared convolutional layers
         res2, res3, res4, res5 = self.get_resnet_backbone(data, with_dpyramid=True, with_dconv=True)
 
-        # large separable convolution(kernel=15)
-        # Light-Head-RCNN
-        # def get_thin_map(id, data, k=15, cmid=256, cout=490):
-        #     ca_1 = mxnet.sym.Convolution(data=data, kernel=(k, 1), pad=(7, 0), stride=(1, 1), num_filter=cmid, name='res{}_thin_ca1'.format(id))
-        #     ca_2 = mxnet.sym.Convolution(data=ca_1, kernel=(1, k), pad=(0, 7), stride=(1, 1), num_filter=cout, name='res{}_thin_ca2'.format(id))
-        #     cb_1 = mxnet.sym.Convolution(data=data, kernel=(k, 1), pad=(7, 0), stride=(1, 1), num_filter=cmid, name='res{}_thin_cb1'.format(id))
-        #     cb_2 = mxnet.sym.Convolution(data=cb_1, kernel=(1, k), pad=(0, 7), stride=(1, 1), num_filter=cout, name='res{}_thin_cb2'.format(id))
-        #     #sum
-        #     thin_map = mxnet.sym.ElementWiseSum(*[ca_2, cb_2], name='res{}_thin_map'.format(id))
-        #     return thin_map
-
-        # res2 = get_thin_map(2, res2_L)
-        # res3 = get_thin_map(3, res3_L)
-        # res4 = get_thin_map(4, res4_L)
-        # res5 = get_thin_map(5, res5_L)
-
         fpn_p2, fpn_p3, fpn_p4, fpn_p5, fpn_p6 = self.get_fpn_feature(res2, res3, res4, res5)
 
         rpn_cls_score_p2, rpn_prob_p2, rpn_bbox_loss_p2, rpn_bbox_pred_p2 = self.get_rpn_subnet(fpn_p2, cfg.network.NUM_ANCHORS, 'p2')

@@ -30,6 +30,7 @@ class VisDrone(IMDB):
 
         self.root_path = root_path
         self.devkit_path = devkit_path
+        self.image_set = image_set
         self.data_path = os.path.join(devkit_path, 'VisDrone2018-DET-' + image_set)
 
         self.classes = ['__background__',  # always index 0
@@ -101,6 +102,11 @@ class VisDrone(IMDB):
         roi_rec['width'] = float(w)
         #im_size = cv2.imread(roi_rec['image'], cv2.IMREAD_COLOR|cv2.IMREAD_IGNORE_ORIENTATION).shape
         #assert im_size[0] == roi_rec['height'] and im_size[1] == roi_rec['width']
+
+        if(self.image_set == 'test-challenge'):
+            roi_rec.update({'flipped': False})
+            return roi_rec
+
         with open(filename, 'r') as f:
             objs = [x.strip().split(',') for x in f.readlines()]
         
