@@ -118,7 +118,7 @@ def get_rcnn_batch(roidb, cfg):
 
 
 def sample_rois(rois, fg_rois_per_image, rois_per_image, num_classes, cfg,
-                labels=None, overlaps=None, bbox_targets=None, gt_boxes=None):
+                labels=None, overlaps=None, bbox_targets=None, gt_boxes=None, cascade=None):
     """
     generate random sample of ROIs comprising foreground and background examples
     :param rois: all_rois [n, 4]; e2e: [n, 5] with batch_index
@@ -138,7 +138,10 @@ def sample_rois(rois, fg_rois_per_image, rois_per_image, num_classes, cfg,
         labels = gt_boxes[gt_assignment, 4]
 
     # foreground RoI with FG_THRESH overlap
-    fg_indexes = np.where(overlaps >= cfg.TRAIN.FG_THRESH)[0]
+    if(not cfg.network.CASCADE):
+        fg_indexes = np.where(overlaps >= cfg.TRAIN.FG_THRESH)[0]
+    else:
+        fg_indexes = np.where(overlaps >= cfg.TRAIN.CASCADE_FG_THRESH[cascade])[0]
     # guard against the case when an image has fewer than fg_rois_per_image foreground RoIs
     fg_rois_per_this_image = np.minimum(fg_rois_per_image, fg_indexes.size)
     # Sample foreground regions without replacement

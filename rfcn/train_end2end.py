@@ -58,6 +58,7 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
     shutil.copy2(os.path.join(curr_path, 'symbols', config.symbol + '.py'), final_output_path)
     sym_instance = eval(config.symbol + '.' + config.symbol)()
     sym = sym_instance.get_symbol(config, is_train=True)
+    
     feat_sym = sym.get_internals()['rpn_cls_score_output']
 
     # setup multi-gpu
@@ -65,7 +66,7 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
     input_batch_size = config.TRAIN.BATCH_IMAGES * batch_size
 
     # print config
-    pprint.pprint(config)
+    # pprint.pprint(config)
     logger.info('training config:{}\n'.format(pprint.pformat(config)))
 
     # load dataset and prepare imdb for training
@@ -89,7 +90,6 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
     data_shape_dict = dict(train_data.provide_data_single + train_data.provide_label_single)
     pprint.pprint(data_shape_dict)
     sym_instance.infer_shape(data_shape_dict)
-
     # load and initialize params
     if config.TRAIN.RESUME:
         print('continue training from ', begin_epoch)

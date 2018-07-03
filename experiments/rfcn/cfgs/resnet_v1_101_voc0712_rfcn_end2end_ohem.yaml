@@ -2,7 +2,7 @@
 MXNET_VERSION: "mxnet"
 output_path: "./output/rfcn/voc"
 symbol: resnet_v1_101_rfcn
-gpus: '0,1,2,3'
+gpus: '0'
 CLASS_AGNOSTIC: true
 SCALES:
 - 600
@@ -113,7 +113,7 @@ TRAIN:
   RPN_POSITIVE_WEIGHT: -1.0
   # used for end2end training
   # RPN proposal
-  CXX_PROPOSAL: false
+  CXX_PROPOSAL: true
   RPN_NMS_THRESH: 0.7
   RPN_PRE_NMS_TOP_N: 6000
   RPN_POST_NMS_TOP_N: 300
