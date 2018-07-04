@@ -37,6 +37,8 @@ config.network.FIXED_PARAMS_SHARED = ['gamma', 'beta']
 config.network.ANCHOR_SCALES = (8, 16, 32)
 config.network.ANCHOR_RATIOS = (0.5, 1, 2)
 config.network.NUM_ANCHORS = len(config.network.ANCHOR_SCALES) * len(config.network.ANCHOR_RATIOS)
+config.network.CASCADE = False
+config.network.cascade_stage = 1
 
 # dataset related params
 config.dataset = edict()
@@ -104,6 +106,7 @@ config.TRAIN.BATCH_ROIS_OHEM = 128
 # rcnn rois sampling params
 config.TRAIN.FG_FRACTION = 0.25
 config.TRAIN.FG_THRESH = 0.5
+config.TRAIN.CASCADE_FG_THRESH = (0.5, 0.6, 0.7)
 config.TRAIN.BG_THRESH_HI = 0.5
 config.TRAIN.BG_THRESH_LO = 0.0
 # rcnn bounding box regression params

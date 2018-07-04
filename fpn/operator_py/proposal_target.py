@@ -23,13 +23,14 @@ DEBUG = False
 
 
 class ProposalTargetOperator(mx.operator.CustomOp):
-    def __init__(self, num_classes, batch_images, batch_rois, cfg, fg_fraction):
+    def __init__(self, num_classes, batch_images, batch_rois, cfg, fg_fraction, cascade):
         super(ProposalTargetOperator, self).__init__()
         self._num_classes = num_classes
         self._batch_images = batch_images
         self._batch_rois = batch_rois
         self._cfg = cfg
         self._fg_fraction = fg_fraction
+        self._cascade = cascade
 
         if DEBUG:
             self._count = 0
@@ -49,6 +50,7 @@ class ProposalTargetOperator(mx.operator.CustomOp):
             rois_per_image = self._batch_rois / self._batch_images
             fg_rois_per_image = np.round(self._fg_fraction * rois_per_image).astype(int)
 
+
         # Include ground-truth boxes in the set of candidate rois
         zeros = np.zeros((gt_boxes.shape[0], 1), dtype=gt_boxes.dtype)
         all_rois = np.vstack((all_rois, np.hstack((zeros, gt_boxes[:, :-1]))))
@@ -56,7 +58,8 @@ class ProposalTargetOperator(mx.operator.CustomOp):
         assert np.all(all_rois[:, 0] == 0), 'Only single item batches are supported'
 
         rois, labels, bbox_targets, bbox_weights = \
-            sample_rois(all_rois, fg_rois_per_image, rois_per_image, self._num_classes, self._cfg, gt_boxes=gt_boxes)
+            sample_rois(all_rois, fg_rois_per_image, rois_per_image, self._num_classes, self._cfg, 
+                        gt_boxes=gt_boxes, cascade=self._cascade)
 
         if DEBUG:
             print "labels=", labels
@@ -74,19 +77,20 @@ class ProposalTargetOperator(mx.operator.CustomOp):
             self.assign(out_data[ind], req[ind], val)
 
     def backward(self, req, out_grad, in_data, out_data, in_grad, aux):
-        for i in range(len(in_grad)):
-            self.assign(in_grad[i], req[i], 0)
+        self.assign(in_grad[0], req[0], 0)
+        self.assign(in_grad[1], req[1], 0)
 
 
 @mx.operator.register('proposal_target')
 class ProposalTargetProp(mx.operator.CustomOpProp):
-    def __init__(self, num_classes, batch_images, batch_rois, cfg, fg_fraction='0.25'):
+    def __init__(self, num_classes, batch_images, batch_rois, cfg, fg_fraction='0.25', cascade='1'):
         super(ProposalTargetProp, self).__init__(need_top_grad=False)
         self._num_classes = int(num_classes)
         self._batch_images = int(batch_images)
         self._batch_rois = int(batch_rois)
         self._cfg = cPickle.loads(cfg)
         self._fg_fraction = float(fg_fraction)
+        self._cascade = int(cascade) - 1
 
     def list_arguments(self):
         return ['rois', 'gt_boxes']
@@ -109,7 +113,8 @@ class ProposalTargetProp(mx.operator.CustomOpProp):
                [output_rois_shape, label_shape, bbox_target_shape, bbox_weight_shape]
 
     def create_operator(self, ctx, shapes, dtypes):
-        return ProposalTargetOperator(self._num_classes, self._batch_images, self._batch_rois, self._cfg, self._fg_fraction)
+        return ProposalTargetOperator(self._num_classes, self._batch_images, self._batch_rois, self._cfg,
+                                     self._fg_fraction, self._cascade)
 
     def declare_backward_dependency(self, out_grad, in_data, out_data):
         return []

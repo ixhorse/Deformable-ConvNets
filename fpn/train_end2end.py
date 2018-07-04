@@ -42,6 +42,7 @@ from symbols import *
 from core.loader import PyramidAnchorIterator
 from core import callback, metric
 from core.module import MutableModule
+from utils import memonger
 from utils.create_logger import create_logger
 from utils.load_data import load_gt_roidb, merge_roidb, filter_roidb
 from utils.load_model import load_param
@@ -59,6 +60,7 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch, lr, 
     shutil.copy2(os.path.join(curr_path, 'symbols', config.symbol + '.py'), final_output_path)
     sym_instance = eval(config.symbol + '.' + config.symbol)()
     sym = sym_instance.get_symbol(config, is_train=True)
+    # sym = memonger.search_plan(sym)
 
     feat_pyramid_level = np.log2(config.network.RPN_FEAT_STRIDE).astype(int)
     feat_sym = [sym.get_internals()['rpn_cls_score_p' + str(x) + '_output'] for x in feat_pyramid_level]
