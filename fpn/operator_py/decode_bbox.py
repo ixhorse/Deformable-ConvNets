@@ -5,7 +5,7 @@ and image size and scale information.
 
 Cascade RCNN implementation
 """
-
+import cPickle
 import mxnet as mx
 import numpy as np
 import numpy.random as npr
@@ -18,8 +18,10 @@ from nms.nms import py_nms_wrapper, cpu_nms_wrapper, gpu_nms_wrapper
 DEBUG = False
 
 class DecodeBBoxOperator(mx.operator.CustomOp):
-    def __init__(self):
+    def __init__(self, bbox_means, bbox_stds):
         super(DecodeBBoxOperator, self).__init__()
+        self._bbox_means = bbox_means
+        self._bbox_stds = bbox_stds
 
     def forward(self, is_train, req, in_data, out_data, aux):
         batch_size = in_data[1].shape[0]
@@ -30,6 +32,7 @@ class DecodeBBoxOperator(mx.operator.CustomOp):
         # keep the second part
         rois = in_data[0].asnumpy()[:, 1:]
         bbox_deltas = in_data[1].asnumpy()[0, :, 4:8]
+        bbox_deltas = bbox_deltas * self._bbox_stds + self._bbox_means
         im_info = in_data[2].asnumpy()[0, :]
 
 
@@ -53,10 +56,13 @@ class DecodeBBoxOperator(mx.operator.CustomOp):
 
 @mx.operator.register("decode_bbox")
 class ProposalProp(mx.operator.CustomOpProp):
-    def __init__(self, num_reg_classes):
+    def __init__(self, cfg):
         super(ProposalProp, self).__init__(need_top_grad=False)
-        self._num_reg_classes = int(num_reg_classes)
-        assert self._num_reg_classes == 2, 'only support CLASS_AGNOSTIC'
+        # self._num_reg_classes = int(num_reg_classes)
+        self._cfg = cPickle.loads(cfg)
+        self._bbox_means = np.array(self._cfg.TRAIN.BBOX_MEANS)
+        self._bbox_stds = np.array(self._cfg.TRAIN.BBOX_STDS)
+        assert self._cfg.CLASS_AGNOSTIC == True, 'only support CLASS_AGNOSTIC'
 
     def list_arguments(self):
         return ['rois', 'bbox_pred', 'im_info']
@@ -76,7 +82,7 @@ class ProposalProp(mx.operator.CustomOpProp):
         return [rois_shape, bbox_pred_shape, im_info_shape], [output_shape]
 
     def create_operator(self, ctx, shapes, dtypes):
-        return DecodeBBoxOperator()
+        return DecodeBBoxOperator(self._bbox_means, self._bbox_stds)
 
     def declare_backward_dependency(self, out_grad, in_data, out_data):
         return []

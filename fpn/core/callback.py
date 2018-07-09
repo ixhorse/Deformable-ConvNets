@@ -48,9 +48,16 @@ class Speedometer(object):
 
 def do_checkpoint(prefix, means, stds):
     def _callback(iter_no, sym, arg, aux):
-        arg['bbox_pred_weight_test'] = (arg['bbox_pred_weight'].T * mx.nd.array(stds)).T
-        arg['bbox_pred_bias_test'] = arg['bbox_pred_bias'] * mx.nd.array(stds) + mx.nd.array(means)
+        bbox_test_arg = []
+        for key in arg.keys():
+            if not 'rpn' in key:
+                if 'bbox_pred_weight' in key:
+                    arg[key+'_test'] = (arg[key].T * mx.nd.array(stds)).T
+                    bbox_test_arg.append(key+'_test')
+                if 'bbox_pred_bias' in key:
+                    arg[key+'_test'] = arg[key] * mx.nd.array(stds) + mx.nd.array(means)
+                    bbox_test_arg.append(key+'_test')
         mx.model.save_checkpoint(prefix, iter_no + 1, sym, arg, aux)
-        arg.pop('bbox_pred_weight_test')
-        arg.pop('bbox_pred_bias_test')
+        for key in bbox_test_arg:
+            arg.pop(key)
     return _callback

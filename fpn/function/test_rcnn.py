@@ -47,7 +47,7 @@ def test_rcnn(cfg, dataset, image_set, root_path, dataset_path,
     test_data = TestLoader(roidb, cfg, batch_size=len(ctx), shuffle=shuffle, has_rpn=has_rpn)
 
     # load model
-    arg_params, aux_params = load_param(prefix, epoch, process=True)
+    arg_params, aux_params = load_param(prefix, epoch, process=False)
 
     # infer shape
     data_shape_dict = dict(test_data.provide_data_single)

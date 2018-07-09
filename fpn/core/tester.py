@@ -51,6 +51,9 @@ def im_detect(predictor, data_batch, data_names, scales, cfg):
         # save output
         scores = output['cls_prob_reshape_output'].asnumpy()[0]
         bbox_deltas = output['bbox_pred_reshape_output'].asnumpy()[0]
+        means = np.tile(np.array(cfg.TRAIN.BBOX_MEANS), 2 if cfg.CLASS_AGNOSTIC else cfg.dataset.NUM_CLASSES)
+        stds = np.tile(np.array(cfg.TRAIN.BBOX_STDS), 2 if cfg.CLASS_AGNOSTIC else cfg.dataset.NUM_CLASSES)
+        bbox_deltas = bbox_deltas * stds + means
 
         # post processing
         pred_boxes = bbox_pred(rois, bbox_deltas)

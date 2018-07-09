@@ -222,3 +222,81 @@ class RCNNL1LossMetric(mx.metric.EvalMetric):
 
         self.sum_metric += np.sum(bbox_loss)
         self.num_inst += num_inst
+
+class CascadeRCNNL1LossMetric(mx.metric.EvalMetric):
+    def __init__(self, cfg):
+        super(CascadeRCNNL1LossMetric, self).__init__('RCNNL1Loss')
+        self.e2e = cfg.TRAIN.END2END
+        self.ohem = cfg.TRAIN.ENABLE_OHEM
+        self.pred, self.label = get_rcnn_names(cfg)
+
+    def update(self, labels, preds):
+        bbox_loss = preds[-2].asnumpy()
+        if self.ohem:
+            label = preds[self.pred.index('rcnn_label')].asnumpy()
+        else:
+            if self.e2e:
+                label = preds[self.pred.index('rcnn_label')].asnumpy()
+            else:
+                label = labels[self.label.index('rcnn_label')].asnumpy()
+
+        # calculate num_inst (average on those kept anchors)
+        num_inst = np.sum(label != -1)
+
+        self.sum_metric += np.sum(bbox_loss)
+        self.num_inst += num_inst
+
+class CascadeRCNNLogLossMetric(mx.metric.EvalMetric):
+    def __init__(self, cfg):
+        super(CascadeRCNNLogLossMetric, self).__init__('RCNNLogLoss')
+        self.e2e = cfg.TRAIN.END2END
+        self.ohem = cfg.TRAIN.ENABLE_OHEM
+        self.pred, self.label = get_rcnn_names(cfg)
+
+    def update(self, labels, preds):
+        pred = preds[-3]
+        if self.ohem or self.e2e:
+            label = preds[self.pred.index('rcnn_label')]
+        else:
+            label = labels[self.label.index('rcnn_label')]
+
+        last_dim = pred.shape[-1]
+        pred = pred.asnumpy().reshape(-1, last_dim)
+        label = label.asnumpy().reshape(-1,).astype('int32')
+
+        # filter with keep_inds
+        keep_inds = np.where(label != -1)[0]
+        label = label[keep_inds]
+        cls = pred[keep_inds, label]
+
+        cls += 1e-14
+        cls_loss = -1 * np.log(cls)
+        cls_loss = np.sum(cls_loss)
+        self.sum_metric += cls_loss
+        self.num_inst += label.shape[0]
+
+class CascadeRCNNAccMetric(mx.metric.EvalMetric):
+    def __init__(self, cfg):
+        super(CascadeRCNNAccMetric, self).__init__('RCNNAcc')
+        self.e2e = cfg.TRAIN.END2END
+        self.ohem = cfg.TRAIN.ENABLE_OHEM
+        self.pred, self.label = get_rcnn_names(cfg)
+
+    def update(self, labels, preds):
+        pred = preds[-3]
+        if self.ohem or self.e2e:
+            label = preds[self.pred.index('rcnn_label')]
+        else:
+            label = labels[self.label.index('rcnn_label')]
+
+        last_dim = pred.shape[-1]
+        pred_label = pred.asnumpy().reshape(-1, last_dim).argmax(axis=1).astype('int32')
+        label = label.asnumpy().reshape(-1,).astype('int32')
+
+        # filter with keep_inds
+        keep_inds = np.where(label != -1)
+        pred_label = pred_label[keep_inds]
+        label = label[keep_inds]
+
+        self.sum_metric += np.sum(pred_label.flat == label.flat)
+        self.num_inst += len(pred_label.flat)
