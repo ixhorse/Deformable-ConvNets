@@ -11,7 +11,7 @@ default:
   frequent: 100
   kvstore: device
 network:
-  pretrained: "./model/pretrained_model/resnet_v1_101"
+  pretrained: "./model/pretrained_model/resnet-50"
   pretrained_epoch: 0
   CASCADE: True
   PIXEL_MEANS:
@@ -117,7 +117,7 @@ TRAIN:
   RPN_POSITIVE_WEIGHT: -1.0
   # used for end2end training
   # RPN proposal
-  CXX_PROPOSAL: false
+  CXX_PROPOSAL: True
   RPN_NMS_THRESH: 0.7
   RPN_PRE_NMS_TOP_N: 6000
   RPN_POST_NMS_TOP_N: 300
@@ -140,7 +140,7 @@ TEST:
   # size of images for each device
   BATCH_IMAGES: 1
   # RPN proposal
-  CXX_PROPOSAL: false
+  CXX_PROPOSAL: True
   RPN_NMS_THRESH: 0.7
   RPN_PRE_NMS_TOP_N: 6000
   RPN_POST_NMS_TOP_N: 300

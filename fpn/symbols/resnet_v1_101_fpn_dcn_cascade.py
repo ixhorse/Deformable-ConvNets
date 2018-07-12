@@ -928,11 +928,11 @@ class resnet_v1_101_fpn_dcn_cascade(Symbol):
         for name, shape in self.arg_shape_dict.items():
             if 'fpn' in name:
                 arg_params[name] = mx.nd.zeros(shape=shape)
-                initializer(name, arg_params[name])
+                initializer(mx.init.InitDesc(name), arg_params[name])
         for name, shape in self.aux_shape_dict.items():
             if 'fpn' in name:
                 aux_params[name] = mx.nd.zeros(shape=shape)
-                initializer(name, aux_params[name])
+                initializer(mx.init.InitDesc(name), aux_params[name])
 
     def init_weight(self, cfg, arg_params, aux_params):
         for name in self.shared_param_list:
